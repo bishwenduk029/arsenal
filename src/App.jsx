@@ -17,10 +17,15 @@ class App extends Component {
       .bind(this);
   }
 
-  handleNodeClick(node) {
-    fetch(`${myURL}${node}`).then(resp => resp.json())
-    .then((resp) => { this.setState({ listOfNodes: resp }); })
-    .catch(err => console.log(err));
+  async handleNodeClick(node) {
+    try {
+      const jsonPromise = await fetch(`${myURL}${node}`);
+      this.setState({
+        listOfNodes: await jsonPromise.json(),
+      });
+    } catch (err) {
+        console.log('failed');
+    }
   }
 
   render() {
@@ -28,7 +33,8 @@ class App extends Component {
       <div className="App">
         <Network
           root='JENNY'
-          subNodes={this.state.listOfNodes} 
+          subNodes={this.state.listOfNodes}
+          outgoing={false}
           onNodeClick={this.handleNodeClick}
         />
       </div>

@@ -65,9 +65,14 @@ export default class Network extends Component {
     this.getCenter = this.getCenter.bind(this);
     this.makeNetwork = this.makeNetwork.bind(this);
     this.addRootNode = this.addRootNode.bind(this);
+    this.createNewNode = this.createNewNode.bind(this);
     this.expandNetwork = this.expandNetwork.bind(this);
     this.handleNodeClick = this.handleNodeClick.bind(this);
     this.getEdgeConnecting = this.getEdgeConnecting.bind(this);
+    this.removeExistingNodes = this.removeExistingNodes.bind(this);
+    this.removeExistingEdges = this.removeExistingEdges.bind(this);
+    this.createNewIngoingEdge = this.createNewIngoingEdge.bind(this);
+    this.createNewOutgoingEdge = this.createNewOutgoingEdge.bind(this);
   }
 
   componentWillReceiveProps(nextProps) {
@@ -81,7 +86,7 @@ export default class Network extends Component {
 
   // Get the id of the edge connecting two nodes a and b
   getEdgeConnecting(a, b) {
-    let edge = this.edges.get({
+    const edge = this.edges.get({
       filter: function (edge) {
         return edge.from === a && edge.to === b;
       } })[0];
@@ -195,37 +200,60 @@ export default class Network extends Component {
   }
 
   expandNetwork(nodeList) {
-    const subNodeList = [];
-    const newEdges = [];
-    const parentNode = this.nodes.get(this.state.selectedNode);
-    const nodeSpawn = this.getSpawnPosition(parentNode.id);
-    for (let i = 0; i < nodeList.length; i++) {
-      if (this.nodes.getIds().indexOf(nodeList[i].toUpperCase()) === -1) {
-        subNodeList.push({
-        	id: nodeList[i].toUpperCase(),
-          label: nodeList[i],
-          value: 1,
-          level: parentNode.level + 1,
-          parent: parentNode.id,
-          x: nodeSpawn[0],
-          y: nodeSpawn[1],
-          color: '#03a9f4',
-        });
-      }
-      const existingEdges = this.getEdgeConnecting(nodeList[i].toUpperCase(), parentNode.id);
-      if (!existingEdges) {
-        newEdges.push({
-          from: parentNode.id,
-          to: nodeList[i].toUpperCase(),
-          color: '#03a9f4',
-          level: parentNode.level + 1,
-          selectionWidth: 2,
-          hoverWidth: 0,
-        });
-      }
-    }
+    let subNodeList = [];
+    let newEdges = [];
+    subNodeList = nodeList.filter(this.removeExistingNodes).map(this.createNewNode);
+    newEdges = nodeList.filter(this.removeExistingEdges).map(this.props.outgoing ? this.createNewOutgoingEdge : this.createNewIngoingEdge);
     this.nodes.add(subNodeList);
     this.edges.add(newEdges);
+  }
+
+  removeExistingNodes(eachNode) {
+    return (this.nodes.getIds().indexOf(eachNode.toUpperCase()) === -1);
+  }
+
+  createNewNode(eachNode) {
+    const parentNode = this.nodes.get(this.state.selectedNode);
+    const nodeSpawn = this.getSpawnPosition(parentNode.id);
+    return ({
+      id: eachNode.toUpperCase(),
+      label: eachNode,
+      value: 1,
+      level: this.nodes.get(this.state.selectedNode).level + 1,
+      parent: parentNode.id,
+      x: nodeSpawn[0],
+      y: nodeSpawn[1],
+      color: '#03a9f4',
+    });
+  }
+
+  removeExistingEdges(eachNode) {
+    const parentNode = this.nodes.get(this.state.selectedNode);
+    return !(this.getEdgeConnecting(parentNode.id, eachNode.toUpperCase()));
+  }
+
+  createNewOutgoingEdge(eachNode) {
+    const parentNode = this.nodes.get(this.state.selectedNode);
+    return ({
+      from: parentNode.id,
+      to: eachNode.toUpperCase(),
+      color: '#03a9f4',
+      level: parentNode.level + 1,
+      selectionWidth: 2,
+      hoverWidth: 0,
+    });
+  }
+
+  createNewIngoingEdge(eachNode) {
+    const parentNode = this.nodes.get(this.state.selectedNode);
+    return ({
+      to: parentNode.id,
+      from: eachNode.toUpperCase(),
+      color: '#03a9f4',
+      level: parentNode.level + 1,
+      selectionWidth: 2,
+      hoverWidth: 0,
+    });
   }
 
   render() {
@@ -235,6 +263,13 @@ export default class Network extends Component {
 
 Network.propTypes = {
   root: PropTypes.string.isRequired,
+  outgoing: PropTypes.bool,
   onNodeClick: PropTypes.func,
   subNodes: PropTypes.arrayOf(PropTypes.string),
+};
+
+
+Network.defaultProps = {
+  outgoing: true,
+  subNodes: ['Delta', 'Graph', 'Visualizations'],
 };
