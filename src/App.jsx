@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import fetch from 'isomorphic-fetch';
+import Network from 'network-vis';
 import './App.css';
-import Network from './components/network';
 
 const myURL = 'http://localhost:3000/';
 
@@ -32,9 +32,9 @@ class App extends Component {
     return (
       <div className="App">
         <Network
-          root='JENNY'
+          root='HAPPY'
           subNodes={this.state.listOfNodes}
-          outgoing={false}
+          outgoing={true}
           onNodeClick={this.handleNodeClick}
         />
       </div>
